@@ -1,16 +1,14 @@
 #unzip data
-unzip(zipfile = "dataset.zip")
+#unzip(zipfile = "dataset.zip")
 
 #Create output dirs
 output <- "dataset"
 dir.create(path = output)
-dir.create(path = paste0(output, "/Inertial Signals"))
 
 trainSet <- "./UCI HAR Dataset/train/"
 testSet <- "./UCI HAR Dataset/test/"
 
 # 1. Merge data into one dataset
-##Terrible manual merge, but faster to do then develop right loop
 y_train <- read.table("./UCI HAR Dataset/train/y_train.txt")
 y_test <- read.table("./UCI HAR Dataset/test/y_test.txt")
 y <- rbind(y_train, y_test)
@@ -23,40 +21,35 @@ subject_train <- read.table("./UCI HAR Dataset/train/subject_train.txt")
 subject_test <- read.table("./UCI HAR Dataset/test/subject_test.txt")
 subject <- rbind(subject_train, subject_test)
 
-body_acc_x_train <- read.table("./UCI HAR Dataset/train/Inertial Signals/body_acc_x_train.txt")
-body_acc_x_test <- read.table("./UCI HAR Dataset/test/Inertial Signals/body_acc_x_test.txt")
-body_acc_x <- rbind(body_acc_x_train, body_acc_x_test)
+features <- read.table("UCI HAR Dataset/features.txt", stringsAsFactors = F)
+names(features) <- c("number", "name")
+## Add descriptive variable names
+names(X) <- features$name
+names(y) <- "labels"
+names(subject) <- "subject"
 
-body_acc_y_train <- read.table("./UCI HAR Dataset/train/Inertial Signals/body_acc_y_train.txt")
-body_acc_y_test <- read.table("./UCI HAR Dataset/test/Inertial Signals/body_acc_y_test.txt")
-body_acc_y <- rbind(body_acc_y_train, body_acc_y_test)
+dataset <- data.frame(X)
 
-body_acc_z_train <- read.table("./UCI HAR Dataset/train/Inertial Signals/body_acc_z_train.txt")
-body_acc_z_test <- read.table("./UCI HAR Dataset/test/Inertial Signals/body_acc_z_test.txt")
-body_acc_z <- rbind(body_acc_z_train, body_acc_z_test)
+##CLear variables
 
-body_gyro_x_train <- read.table("./UCI HAR Dataset/train/Inertial Signals/body_gyro_x_train.txt")
-body_gyro_x_test <- read.table("./UCI HAR Dataset/test/Inertial Signals/body_gyro_x_test.txt")
-body_gyro_x <- rbind(body_gyro_x_train, body_gyro_x_test)
+rm(y_train, y_test, X_test, X_train, subject_test, subject_train)
+#2. Extracts only the measurements on the mean and standard deviation for each measurement. 
+##Create list of needed features
+cols <- grep("*mean\\(\\)*|*std*", features$name)
 
-body_gyro_y_train <- read.table("./UCI HAR Dataset/train/Inertial Signals/body_gyro_y_train.txt")
-body_gyro_y_test <- read.table("./UCI HAR Dataset/test/Inertial Signals/body_gyro_y_test.txt")
-body_gyro_y <- rbind(body_gyro_y_train, body_gyro_y_test)
+##Create clean dataset
+cleanDataset <- dataset[,cols]
+cleanDataset <- cbind(cleanDataset, y, subject) #Add activity labels and subject labels
 
-body_gyro_z_train <- read.table("./UCI HAR Dataset/train/Inertial Signals/body_gyro_z_train.txt")
-body_gyro_z_test <- read.table("./UCI HAR Dataset/test/Inertial Signals/body_gyro_z_test.txt")
-body_gyro_z <- rbind(body_gyro_z_train, body_gyro_z_test)
+#3. Uses descriptive activity names to name the activities in the data set
+acvtivity <- read.table("UCI HAR Dataset/activity_labels.txt", stringsAsFactors = F)
+names(activity) <- c("labels", "name")
+##Replace activity number with activity name
+cleanDataset <- merge(cleanDataset, activity, by = "labels")
+##Drop unnecessary column
+cleanDataset$labels <- NULL
 
-total_acc_x_train <- read.table("./UCI HAR Dataset/train/Inertial Signals/total_acc_x_train.txt")
-total_acc_x_test <- read.table("./UCI HAR Dataset/test/Inertial Signals/total_acc_x_test.txt")
-total_acc_x <- rbind(total_acc_x_train, total_acc_x_test)
-
-total_acc_y_train <- read.table("./UCI HAR Dataset/train/Inertial Signals/total_acc_y_train.txt")
-total_acc_y_test <- read.table("./UCI HAR Dataset/test/Inertial Signals/total_acc_y_test.txt")
-total_acc_y <- rbind(total_acc_y_train, total_acc_y_test)
-
-total_acc_z_train <- read.table("./UCI HAR Dataset/train/Inertial Signals/total_acc_z_train.txt")
-total_acc_z_test <- read.table("./UCI HAR Dataset/test/Inertial Signals/total_acc_z_test.txt")
-total_acc_z <- rbind(total_acc_z_train, total_acc_z_test)
-
-#2. 
+#4. (Actually it's 5., but step 4 alredy done in step 1)
+#Create tidy dataset
+tidyData <- aggregate(. ~ name + subject, data = cleanDataset, mean)
+write.table(tidyData, file = paste0(output, "/tidyDataset.txt"))
