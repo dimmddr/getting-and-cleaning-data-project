@@ -52,4 +52,4 @@ cleanDataset$labels <- NULL
 #4. (Actually it's 5., but step 4 alredy done in step 1)
 #Create tidy dataset
 tidyData <- aggregate(. ~ name + subject, data = cleanDataset, mean)
-write.table(tidyData, file = paste0(output, "/tidyDataset.txt"))
+write.table(tidyData, file = paste0(output, "/tidyDataset.txt"), row.names = F)
